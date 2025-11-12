@@ -153,7 +153,7 @@ Vendor:   cPanel, Inc.
 Name:     %{?scl_prefix}php
 Version:  7.2.34
 # Doing release_prefix this way for Release allows for OBS-proof versioning, See EA-4588 for more details
-%define release_prefix 10
+%define release_prefix 11
 Release:  %{release_prefix}%{?dist}.cpanel
 # All files licensed under PHP version 3.01, except
 # Zend is licensed under Zend
@@ -201,6 +201,7 @@ Patch402: 0012-0022-PLESK-missed-kill.patch
 Patch403: 0013-Update-libxml-include-file-references.patch
 
 Patch015: 0015-libxml2-2.13-makes-changes-to-how-the-parsing-state-.patch
+Patch016: 0016-Fix-libxml2-v2.15.0-compatibility.patch
 
 BuildRequires: bzip2-devel, %{db_devel}
 
@@ -1072,6 +1073,7 @@ perl -pi -e 's/-lt "64"/-lt "63"/' build/buildcheck.sh
 %patch403 -p1 -b .libxml
 
 %patch015 -p1 -b .libxml2
+%patch016 -p1 -b .libxml2
 
 # Prevent %%doc confusion over LICENSE files
 cp Zend/LICENSE Zend/ZEND_LICENSE
@@ -1245,9 +1247,13 @@ mkdir Zend && cp ../Zend/zend_{language,ini}_{parser,scanner}.[ch] Zend
 # openssl: for PHAR_SIG_OPENSSL
 # zlib: used by image
 
+export LDFLAGS="-Wl,--enable-new-dtags \
+    -Wl,-rpath,/opt/cpanel/ea-libxml2/lib \
+    -Wl,-rpath,/opt/cpanel/ea-libxml2/lib64"
+
 %if 0%{?rhel} >= 8
 %else
-export LDFLAGS="-Wl,-rpath=/opt/cpanel/ea-brotli/lib"
+export LDFLAGS="$LDFLAGS -Wl,-rpath=/opt/cpanel/ea-brotli/lib"
 %endif
 
 ln -sf ../configure
@@ -1954,6 +1960,9 @@ fi
 
 
 %changelog
+* Wed Oct 08 2025 Chris Castillo <chris.castillo@webpros.com> - 7.2.34-11
+- EA4-136: Fix libxml2 v2.15.0 compatibility
+
 * Fri Sep 13 2024 Julian Brown <julian.brown@cpanel.net> - 7.2.34-10
 - ZC-12167: Correct libxml2 problem
 
